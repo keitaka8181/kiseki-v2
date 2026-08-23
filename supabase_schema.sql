@@ -7,7 +7,7 @@ create table public.memories (
   timestamp   timestamptz not null default now(),  -- 投稿日時
   nickname    text not null,                        -- あなたのあだ名
   place_name  text not null,                        -- 思い出の場所の名前
-  story       text not null,                        -- どういう思い出？
+  memory      text not null,                        -- どういう思い出？
   lat         double precision not null,            -- 緯度
   lng         double precision not null,            -- 経度
   age         text,                                 -- あなたはおいくつ？(文字列のまま)
@@ -34,7 +34,7 @@ create policy "anyone can insert memories"
     -- 最低限のバリデーション: 必須フィールドと緯度経度の範囲
     char_length(nickname)   between 1 and 100 and
     char_length(place_name) between 1 and 200 and
-    char_length(story)      between 1 and 2000 and
+    char_length(memory)     between 1 and 2000 and
     lat between -90  and 90 and
     lng between -180 and 180
   );
