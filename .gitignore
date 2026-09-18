@@ -5,3 +5,4 @@ out/
 .env*
 *.tsbuildinfo
 threejs-patch.zip
+docs/kiseki-v2-audit.md
