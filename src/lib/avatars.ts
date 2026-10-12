@@ -32,8 +32,10 @@ export function isAvatarId(v: unknown): v is AvatarId {
 // Google フォーム時代のデータと値を揃えるため、保存値は全文のまま
 export const GENRES = [
   'ADVENTURE 迷子になった道、チャレンジした体験、道なき道を行く記録。',
-  'MEMORY 大切な人、忘れられない出来事、懐かしい風景。',
-  'DISCOVERY 初めての発見、心を動かされた瞬間。',
+  'DISCOVERY 初めて行った場所、自分を変えた旅、感動した景色。',
+  'FUN 笑った瞬間、仲間との冒険、夏祭りやイベントの記憶。',
+  'NOSTALGIA 子供の頃の遊び場、旧校舎、忘れられない家族旅行など。',
+  'ROMANCE 恋人との想い出、公園でのキス、初めて手をつないだ場所など。',
 ] as const;
 
 /** "ADVENTURE 迷子に…" → "ADVENTURE" */
