@@ -10,6 +10,8 @@ import TimelineControls from '@/components/timeline/TimelineControls';
 import HorizontalScroller from '@/components/ui/HorizontalScroller';
 import MemoryPanel from '@/components/ui/MemoryPanel';
 import BasemapTimeline from '@/components/map/BasemapTimeline';
+import AddMemoryForm from '@/components/ui/AddMemoryForm';
+import { useEffect, useState } from 'react';
 
 const MapView = dynamic(() => import('@/components/map/MapView'), { ssr: false });
 
@@ -30,7 +32,13 @@ interface Props {
   onHashtagClick: (tag: string) => void;
   onSidebarOpen: () => void;
   onSidebarClose: () => void;
+  draftLocation: { lat: number; lng: number } | null;
+  onMapContextMenu: (pos: { lat: number; lng: number }) => void;
+  onCancelDraft: () => void;
+  onMemoryCreated: (memory: Memory) => void;
 }
+
+const HINT_KEY = 'kiseki:hint-add-seen';
 
 export default function MapExplorer({
   memories, filtered, years, isLoading,
@@ -40,7 +48,24 @@ export default function MapExplorer({
   onFilterChange, onBasemapChange,
   onSelectMemory, onCloseMemory, onHashtagClick,
   onSidebarOpen, onSidebarClose,
+  draftLocation, onMapContextMenu, onCancelDraft, onMemoryCreated,
 }: Props) {
+  // 「右クリックで追加できる」ことを初回だけ案内する
+  const [showHint, setShowHint] = useState(false);
+  useEffect(() => {
+    let seen = false;
+    try { seen = localStorage.getItem(HINT_KEY) === '1'; } catch { /* 無視 */ }
+    if (seen) return;
+    setShowHint(true);
+    const t = setTimeout(() => setShowHint(false), 6000);
+    return () => clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    if (!draftLocation) return;
+    setShowHint(false);
+    try { localStorage.setItem(HINT_KEY, '1'); } catch { /* 無視 */ }
+  }, [draftLocation]);
+
   return (
     /*
      * position:relative + 明示的なサイズ指定が必須。
@@ -55,6 +80,8 @@ export default function MapExplorer({
         onMarkerClick={onSelectMemory}
         flyToMemory={flyToMemory}
         activeBasemap={activeBasemap}
+        onMapContextMenu={onMapContextMenu}
+        draftLocation={draftLocation}
       />
 
       {/* === UI overlay 群 (z-index 10以上、地図の上) === */}
@@ -87,6 +114,22 @@ export default function MapExplorer({
       />
 
       <BasemapTimeline activeId={activeBasemap.id} onChange={onBasemapChange} />
+
+      {draftLocation && (
+        <AddMemoryForm
+          key={`${draftLocation.lat},${draftLocation.lng}`}
+          location={draftLocation}
+          onClose={onCancelDraft}
+          onCreated={onMemoryCreated}
+        />
+      )}
+
+      {showHint && !isLoading && !draftLocation && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-black/70 text-white text-xs px-4 py-2 rounded-full shadow pointer-events-none whitespace-nowrap">
+          <span className="hidden md:inline">地図を右クリックして思い出をのこせます</span>
+          <span className="md:hidden">地図を長押しして思い出をのこせます</span>
+        </div>
+      )}
 
       {isLoading && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-white/80 text-xs text-gray-500 px-3 py-1 rounded-full shadow z-20">

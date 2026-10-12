@@ -3,9 +3,6 @@
 import { useEffect, useState } from 'react';
 import { Memory } from '@/types';
 
-const FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSfXPt1yca5nZY26U4hsEinVi0WsFPqheEV-ed_TiX7KtzGp-g/viewform?usp=header';
-
 interface Props {
   memories: Memory[];
   onExplore: () => void;
@@ -39,16 +36,6 @@ export default function WelcomeModal({ memories, onExplore }: Props) {
         </h1>
 
         <div className="flex w-full rounded-xl overflow-hidden border border-gray-200">
-          <a
-            href={FORM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex flex-col items-center py-4 hover:bg-red-50 transition-colors"
-          >
-            <span className="text-lg font-bold text-gray-700">のこす</span>
-            <span className="text-xs text-gray-400 mt-1">share</span>
-          </a>
-          <div className="w-px bg-gray-200" />
           <button
             onClick={onExplore}
             className="flex-1 flex flex-col items-center py-4 hover:bg-blue-50 transition-colors"

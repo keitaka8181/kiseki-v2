@@ -1,5 +1,5 @@
 {
-  "name": "@repo/kisekiv2",
+  "name": "@repo/kiseki-v2",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,6 +14,7 @@
     "next": "16.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
     "three": "0.160.0"
   },
   "devDependencies": {

@@ -1,17 +1,18 @@
 // src/lib/supabase.ts
+// サーバー専用。ブラウザ側で import するとビルドエラーになる（server-only）
 import 'server-only';
 import { createClient } from '@supabase/supabase-js';
 
-const url       = process.env.SUPABASE_URL;
-const secretKey = process.env.SUPABASE_SECRET_KEY;
+// NEXT_PUBLIC_ を付けない＝ブラウザ用の JS に埋め込まれない
+const url = process.env.SUPABASE_URL;
+const key = process.env.SUPABASE_SECRET_KEY;
+if (!url || !key) {
+  throw new Error('SUPABASE_URL / SUPABASE_SECRET_KEY が設定されていません');
+}
 
-if (!url)       throw new Error('環境変数 SUPABASE_URL が設定されていません');
-if (!secretKey) throw new Error('環境変数 SUPABASE_SECRET_KEY が設定されていません');
-
-// サーバー専用のクライアント（全権限の鍵を使うため、ブラウザ側から読み込まない）
-// 認証機能を使わないため @supabase/ssr は不要
-export const supabase = createClient(url, secretKey, {
-  auth: { persistSession: false },
+// サーバー専用の鍵（RLS の対象外）。DB へのアクセスは /api/data からのみ行う
+export const supabase = createClient(url, key, {
+  auth: { persistSession: false, autoRefreshToken: false },
 });
 
 // DB上のカラム名 (snake_case) → アプリの Memory 型 (camelCase) に変換

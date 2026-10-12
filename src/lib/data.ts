@@ -1,3 +1,4 @@
+// サーバー専用（DB の読み書き）。ブラウザでも使う関数と型は memory-utils.ts へ
 import 'server-only';
 import { Memory } from '@/types';
 import { supabase, rowToMemory, MemoryRow } from '@/lib/supabase';
@@ -9,14 +10,14 @@ import type { NewMemoryInput } from '@/lib/memory-utils';
 export async function fetchMemories(): Promise<Memory[]> {
   const { data, error } = await supabase
     .from('memories')
-    .select('id, timestamp, nickname, place_name, memory, lat, lng, avatar, hashtags, genre, year')
+    .select('id, timestamp, nickname, place_name, memory, lat, lng, age, avatar, hashtags, genre, year')
     .order('timestamp', { ascending: false });
 
   if (error) {
     console.error('Supabase 取得失敗:', error);
     return [];
   }
-  return (data as Omit<MemoryRow, 'age'>[]).map((r) => rowToMemory({ ...r, age: null }));
+  return (data as MemoryRow[]).map(rowToMemory);
 }
 
 // ----------------------------------------------------------------

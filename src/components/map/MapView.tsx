@@ -11,11 +11,19 @@ interface Props {
   onMarkerClick: (memory: Memory) => void;
   flyToMemory?: Memory | null;
   activeBasemap: BasemapLayer;
+  /** 地図の右クリック（タッチ端末では長押し）で呼ばれる */
+  onMapContextMenu?: (pos: { lat: number; lng: number }) => void;
+  /** 投稿中の仮ピン位置。null なら非表示 */
+  draftLocation?: { lat: number; lng: number } | null;
 }
 
 const AVATAR_SIZE = 40;
+const LONG_PRESS_MS = 600;
+const LONG_PRESS_MOVE_TOLERANCE = 10; // px
 
-export default function MapView({ memories, onMarkerClick, flyToMemory, activeBasemap }: Props) {
+export default function MapView({
+  memories, onMarkerClick, flyToMemory, activeBasemap, onMapContextMenu, draftLocation,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import('maplibre-gl').Map | null>(null);
   const markersRef = useRef<import('maplibre-gl').Marker[]>([]);
@@ -23,8 +31,11 @@ export default function MapView({ memories, onMarkerClick, flyToMemory, activeBa
   const memoriesRef = useRef(memories);
   const onMarkerClickRef = useRef(onMarkerClick);
   const pendingBasemapRef = useRef<BasemapLayer | null>(null);
+  const onMapContextMenuRef = useRef(onMapContextMenu);
+  const draftMarkerRef = useRef<import('maplibre-gl').Marker | null>(null);
   memoriesRef.current = memories;
   onMarkerClickRef.current = onMarkerClick;
+  onMapContextMenuRef.current = onMapContextMenu;
 
   function refreshMarkers(
     map: import('maplibre-gl').Map,
@@ -105,6 +116,56 @@ export default function MapView({ memories, onMarkerClick, flyToMemory, activeBa
         refreshMarkers(map, maplibregl!, memoriesRef.current);
       });
 
+      // 右クリックで思い出を追加
+      // (右ドラッグで回転した場合は MapLibre 側で contextmenu が抑止される)
+      map.on('contextmenu', (e) => {
+        e.originalEvent.preventDefault();
+        onMapContextMenuRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+      });
+
+      // タッチ端末: 1本指の長押しで同じ動作 (iOS Safari は contextmenu を発火しないため)
+      const canvas = map.getCanvasContainer();
+      let pressTimer: ReturnType<typeof setTimeout> | null = null;
+      let pressStart: { x: number; y: number } | null = null;
+      let longPressFired = false;
+      const cancelPress = () => {
+        if (pressTimer) clearTimeout(pressTimer);
+        pressTimer = null;
+        pressStart = null;
+      };
+      canvas.addEventListener('touchstart', (ev) => {
+        cancelPress();
+        longPressFired = false;
+        if (ev.touches.length !== 1) return;
+        const t = ev.touches[0];
+        pressStart = { x: t.clientX, y: t.clientY };
+        pressTimer = setTimeout(() => {
+          if (!pressStart) return;
+          const rect = canvas.getBoundingClientRect();
+          const lngLat = map.unproject([pressStart.x - rect.left, pressStart.y - rect.top]);
+          cancelPress();
+          longPressFired = true;
+          onMapContextMenuRef.current?.({ lat: lngLat.lat, lng: lngLat.lng });
+        }, LONG_PRESS_MS);
+      }, { passive: true });
+      canvas.addEventListener('touchmove', (ev) => {
+        if (!pressStart) return;
+        const t = ev.touches[0];
+        if (ev.touches.length !== 1 ||
+            Math.hypot(t.clientX - pressStart.x, t.clientY - pressStart.y) > LONG_PRESS_MOVE_TOLERANCE) {
+          cancelPress();
+        }
+      }, { passive: true });
+      canvas.addEventListener('touchend', (ev) => {
+        cancelPress();
+        // 指を離したときの合成クリックが、開いたフォームの入力欄などを押さないようにする
+        if (longPressFired) {
+          ev.preventDefault();
+          longPressFired = false;
+        }
+      }, { passive: false });
+      canvas.addEventListener('touchcancel', cancelPress);
+
       // ベースマップ切替後にマーカーを再描画
       map.on('style.load', () => {
         if (!mapLoadedRef.current) return;
@@ -119,6 +180,8 @@ export default function MapView({ memories, onMarkerClick, flyToMemory, activeBa
       mapLoadedRef.current = false;
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
+      draftMarkerRef.current?.remove();
+      draftMarkerRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -140,6 +203,36 @@ export default function MapView({ memories, onMarkerClick, flyToMemory, activeBa
     if (!mapRef.current || !mapLoadedRef.current || !maplibregl) return;
     refreshMarkers(mapRef.current, maplibregl, memories);
   }, [memories]);
+
+  // 投稿中の仮ピン
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !maplibregl) return;
+    if (!draftLocation) {
+      draftMarkerRef.current?.remove();
+      draftMarkerRef.current = null;
+      return;
+    }
+    const lngLat: [number, number] = [draftLocation.lng, draftLocation.lat];
+    if (draftMarkerRef.current) {
+      draftMarkerRef.current.setLngLat(lngLat);
+    } else {
+      draftMarkerRef.current = new maplibregl.Marker({ color: '#ef4444' })
+        .setLngLat(lngLat)
+        .addTo(map);
+    }
+
+    // 投稿フォームに仮ピンが隠れる場合は地図をずらす
+    //   スマホ: フォームは下からのシート → ピンを画面上部へ
+    //   PC:     フォームは右側のパネル (幅 約400px) → ピンを左へ
+    const { clientWidth: w, clientHeight: h } = map.getContainer();
+    const pt = map.project(lngLat);
+    if (w < 768) {
+      if (pt.y > h * 0.25) map.easeTo({ center: lngLat, offset: [0, -h * 0.32], duration: 500 });
+    } else if (pt.x > w - 420) {
+      map.easeTo({ center: lngLat, offset: [-210, 0], duration: 500 });
+    }
+  }, [draftLocation]);
 
   // 思い出選択時にフライ
   useEffect(() => {

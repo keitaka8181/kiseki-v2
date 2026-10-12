@@ -4,13 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { NewMemoryInput } from '@/lib/memory-utils';
-
-const AVATARS = ['boy', 'girl', 'sporty-boy', 'sporty-girl', 'adult-man', 'adult-woman'];
-const GENRES = [
-  'ADVENTURE 迷子になった道、チャレンジした体験、道なき道を行く記録。',
-  'MEMORY 大切な人、忘れられない出来事、懐かしい風景。',
-  'DISCOVERY 初めての発見、心を動かされた瞬間。',
-];
+import { AVATARS, GENRES } from '@/lib/avatars';
 
 export default function SubmitPage() {
   const router = useRouter();

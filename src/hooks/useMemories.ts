@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Memory } from '@/types';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
@@ -36,7 +36,12 @@ export function useMemories() {
     return () => { cancelled = true; };
   }, []);
 
-  return { memories, status, error, isLoading: status === 'loading' };
+  // 投稿直後のレコードを即座に反映する（API の GET は最大5分キャッシュされるため）
+  const addMemory = useCallback((memory: Memory) => {
+    setMemories((prev) => [memory, ...prev.filter((m) => m.id !== memory.id)]);
+  }, []);
+
+  return { memories, status, error, isLoading: status === 'loading', addMemory };
 }
 
 // ----------------------------------------------------------------

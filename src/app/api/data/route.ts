@@ -1,8 +1,10 @@
 // src/app/api/data/route.ts
 import { NextResponse } from 'next/server';
 import { fetchMemories, insertMemory } from '@/lib/data';
+import { validateNewMemory } from '@/lib/validation';
 
 // 5分ごとに再検証（ISR相当のキャッシュ）
+// ※ 投稿直後の反映はクライアント側で新規レコードを state に追加して補っている
 export const revalidate = 300;
 
 export async function GET() {
@@ -10,20 +12,24 @@ export async function GET() {
   return NextResponse.json({ memories, source: 'supabase' });
 }
 
-// POST で新規投稿も可能（クライアントが直接Supabaseを叩く構成なら任意）
 export async function POST(req: Request) {
+  let body: unknown;
   try {
-    const body = await req.json();
-    const required = ['nickname', 'placeName', 'memory', 'lat', 'lng'] as const;
-    for (const k of required) {
-      if (body[k] === undefined || body[k] === null || body[k] === '') {
-        return NextResponse.json({ error: `${k} は必須です` }, { status: 400 });
-      }
-    }
-    const memory = await insertMemory(body);
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'JSON を解析できませんでした' }, { status: 400 });
+  }
+
+  const v = validateNewMemory(body);
+  if (!v.ok) {
+    return NextResponse.json({ error: v.error }, { status: 400 });
+  }
+
+  try {
+    const memory = await insertMemory(v.value);
     return NextResponse.json({ memory }, { status: 201 });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'unknown error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('[api/data] insert failed:', e);
+    return NextResponse.json({ error: '投稿に失敗しました。時間をおいて再度お試しください' }, { status: 500 });
   }
 }
