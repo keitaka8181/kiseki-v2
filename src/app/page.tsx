@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { Memory } from '@/types';
 import { applyFilters, useMemories } from '@/hooks/useMemories';
 import { useMapFilter } from '@/hooks/useMapFilter';
-import { getUniqueYears } from '@/lib/data';
+import { getUniqueYears } from '@/lib/memory-utils';
 import { BASEMAP_LAYERS, DEFAULT_BASEMAP_ID, BasemapLayer } from '@/lib/basemaps';
 
 import AppLayout from '@/components/AppLayout';

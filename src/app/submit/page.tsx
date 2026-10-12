@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { NewMemoryInput } from '@/lib/data';
+import type { NewMemoryInput } from '@/lib/memory-utils';
 
 const AVATARS = ['boy', 'girl', 'sporty-boy', 'sporty-girl', 'adult-man', 'adult-woman'];
 const GENRES = [

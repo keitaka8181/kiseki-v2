@@ -27,7 +27,7 @@ npm run dev
 
 ## 環境変数（`.env.example` より）
 
-- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase接続情報（クライアント/サーバー両方から参照するため `NEXT_PUBLIC_` 必須）
+- `SUPABASE_URL` / `SUPABASE_SECRET_KEY` — Supabase接続情報。サーバー側でのみ使用し、クライアントには公開しない（`NEXT_PUBLIC_` を付けない）
 - `MAPTILER_API_KEY` — MapTiler Geocoding用。サーバー側プロキシ(`/api/geocode`)でのみ使用し、クライアントには公開しない
 
 ## 技術スタック

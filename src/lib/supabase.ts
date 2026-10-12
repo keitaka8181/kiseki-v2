@@ -1,12 +1,16 @@
 // src/lib/supabase.ts
+import 'server-only';
 import { createClient } from '@supabase/supabase-js';
 
-const url     = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const url       = process.env.SUPABASE_URL;
+const secretKey = process.env.SUPABASE_SECRET_KEY;
 
-// サーバー／クライアント両方で使える素のクライアント
+if (!url)       throw new Error('環境変数 SUPABASE_URL が設定されていません');
+if (!secretKey) throw new Error('環境変数 SUPABASE_SECRET_KEY が設定されていません');
+
+// サーバー専用のクライアント（全権限の鍵を使うため、ブラウザ側から読み込まない）
 // 認証機能を使わないため @supabase/ssr は不要
-export const supabase = createClient(url, anonKey, {
+export const supabase = createClient(url, secretKey, {
   auth: { persistSession: false },
 });
 
