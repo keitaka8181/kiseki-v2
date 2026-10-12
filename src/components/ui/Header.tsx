@@ -1,8 +1,5 @@
 'use client';
 
-const FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSfXPt1yca5nZY26U4hsEinVi0WsFPqheEV-ed_TiX7KtzGp-g/viewform?usp=header';
-
 interface Props {
   onLogoClick: () => void;
   onMenuClick: () => void;
@@ -32,15 +29,8 @@ export default function Header({ onLogoClick, onMenuClick }: Props) {
         <span className="text-blue-400">キ</span>
       </button>
 
-      {/* Right: のこす button */}
-      <a
-        href={FORM_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="pointer-events-auto bg-white text-gray-700 font-bold text-sm px-4 py-2 rounded-full shadow hover:bg-red-50 transition-colors"
-      >
-        のこす
-      </a>
+      {/* Right: spacer (same width as hamburger) to keep logo centered */}
+      <div className="w-9" aria-hidden="true" />
     </header>
   );
 }
