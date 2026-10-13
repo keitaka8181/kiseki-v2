@@ -7,10 +7,24 @@ interface Props {
   memory: Memory | null;
   onClose: () => void;
   onHashtagClick: (tag: string) => void;
+  /** 同じ場所にある思い出（選択中のものを含む）。2件以上なら切り替えボタンを出す */
+  samePlace?: Memory[];
+  /** 同じ場所の別の思い出に切り替える */
+  onSelectSamePlace?: (memory: Memory) => void;
 }
 
-export default function MemoryPanel({ memory, onClose, onHashtagClick }: Props) {
+export default function MemoryPanel({
+  memory, onClose, onHashtagClick, samePlace = [], onSelectSamePlace,
+}: Props) {
   if (!memory) return null;
+
+  const index = samePlace.findIndex((m) => m.id === memory.id);
+  const total = samePlace.length;
+  const showNav = total > 1 && index >= 0 && !!onSelectSamePlace;
+  const go = (step: number) => {
+    if (!showNav) return;
+    onSelectSamePlace!(samePlace[(index + step + total) % total]);
+  };
 
   const hashtags = memory.hashtags
     .split(/[\s,]+/)
@@ -44,6 +58,29 @@ export default function MemoryPanel({ memory, onClose, onHashtagClick }: Props) 
             ×
           </button>
         </div>
+
+        {/* 同じ場所の思い出の切り替え */}
+        {showNav && (
+          <div className="flex items-center justify-between px-4 py-1.5 bg-gray-800 text-white text-xs">
+            <button
+              onClick={() => go(-1)}
+              aria-label="前の思い出"
+              className="px-2 py-0.5 rounded hover:bg-white/15 text-base leading-none"
+            >
+              ‹
+            </button>
+            <span className="tabular-nums">
+              この場所の思い出 {index + 1} / {total}
+            </span>
+            <button
+              onClick={() => go(1)}
+              aria-label="次の思い出"
+              className="px-2 py-0.5 rounded hover:bg-white/15 text-base leading-none"
+            >
+              ›
+            </button>
+          </div>
+        )}
 
         {/* Body */}
         <div className="p-4 flex flex-col gap-2">

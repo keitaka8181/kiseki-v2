@@ -11,7 +11,8 @@ import HorizontalScroller from '@/components/ui/HorizontalScroller';
 import MemoryPanel from '@/components/ui/MemoryPanel';
 import BasemapTimeline from '@/components/map/BasemapTimeline';
 import AddMemoryForm from '@/components/ui/AddMemoryForm';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { locationKey } from '@/lib/memory-utils';
 
 const MapView = dynamic(() => import('@/components/map/MapView'), { ssr: false });
 
@@ -28,6 +29,8 @@ interface Props {
   onFilterChange: (patch: Partial<FilterState>) => void;
   onBasemapChange: (layer: BasemapLayer) => void;
   onSelectMemory: (memory: Memory) => void;
+  /** 地図を動かさずに選択だけ切り替える（同じ場所の思い出の切り替え用） */
+  onChangeSelectedMemory: (memory: Memory) => void;
   onCloseMemory: () => void;
   onHashtagClick: (tag: string) => void;
   onSidebarOpen: () => void;
@@ -36,6 +39,8 @@ interface Props {
   onMapContextMenu: (pos: { lat: number; lng: number }) => void;
   onCancelDraft: () => void;
   onMemoryCreated: (memory: Memory) => void;
+  /** Three.js の 3D マーカーを重ねる（試験中。/3d で true） */
+  enable3D?: boolean;
 }
 
 const HINT_KEY = 'kiseki:hint-add-seen';
@@ -46,10 +51,18 @@ export default function MapExplorer({
   selectedMemory, flyToMemory,
   sidebarOpen,
   onFilterChange, onBasemapChange,
-  onSelectMemory, onCloseMemory, onHashtagClick,
+  onSelectMemory, onChangeSelectedMemory, onCloseMemory, onHashtagClick,
   onSidebarOpen, onSidebarClose,
   draftLocation, onMapContextMenu, onCancelDraft, onMemoryCreated,
+  enable3D = false,
 }: Props) {
+  // 選択中の思い出と同じ場所にある思い出（地図に出ているものの中から）
+  const samePlace = useMemo(() => {
+    if (!selectedMemory) return [];
+    const key = locationKey(selectedMemory);
+    return filtered.filter((m) => locationKey(m) === key);
+  }, [filtered, selectedMemory]);
+
   // 「右クリックで追加できる」ことを初回だけ案内する
   const [showHint, setShowHint] = useState(false);
   useEffect(() => {
@@ -82,7 +95,20 @@ export default function MapExplorer({
         activeBasemap={activeBasemap}
         onMapContextMenu={onMapContextMenu}
         draftLocation={draftLocation}
+        enable3D={enable3D}
+        selectedMemoryId={selectedMemory?.id ?? null}
       />
+
+      {enable3D && (
+        <a
+          href="/"
+          title="通常の表示に戻る"
+          className="absolute top-16 right-4 z-20 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-[11px] text-white shadow hover:bg-black/75"
+        >
+          <span className="font-bold">3D</span>
+          <span className="text-white/70">試験中 ×</span>
+        </a>
+      )}
 
       {/* === UI overlay 群 (z-index 10以上、地図の上) === */}
 
@@ -103,6 +129,8 @@ export default function MapExplorer({
         memory={selectedMemory}
         onClose={onCloseMemory}
         onHashtagClick={onHashtagClick}
+        samePlace={samePlace}
+        onSelectSamePlace={onChangeSelectedMemory}
       />
 
       <HorizontalScroller memories={filtered} onSelect={onSelectMemory} />

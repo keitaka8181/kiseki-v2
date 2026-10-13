@@ -10,6 +10,9 @@ MapLibre GL で地図を表示し、投稿された思い出（メッセージ�
   - 検索語・ハッシュタグ・年・ジャンルでの絞り込み（`useMapFilter`）
   - 地図の背景レイヤー切り替え（`lib/basemaps.ts`）
 - `/submit`（`src/app/submit/page.tsx`）— 新しい思い出の投稿フォーム（ニックネーム・場所・緯度経度・年代・アバター・ハッシュタグ・ジャンル）
+- `/3d`（`src/app/3d/page.tsx`）— 試験中の 3D 表示。トップページと同じ画面に、Three.js の 3D マーカー（光の柱・回るキューブ・地面のリング）を重ねる
+  - 描画は `src/components/map/three/ThreeMemoryLayer.ts`（MapLibre のカスタムレイヤー）。地球儀表示に対応するため、`map.transform.getMatrixForModel()` で思い出ごとの変換行列を使う
+  - three.js はこの画面でだけ読み込むので、トップページの読み込みは重くならない
 - `src/app/api/geocode` — MapTiler Geocoding API をサーバー側でプロキシするAPIルート（APIキーをクライアントに露出させないため）
 - `src/app/api/data` — データ取得系のAPIルート
 
